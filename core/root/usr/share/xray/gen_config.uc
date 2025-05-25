@@ -10,6 +10,7 @@ import { dokodemo_inbound, extra_inbound_balancers, extra_inbound_global, extra_
 import { manual_tproxy_outbound_tags, manual_tproxy_outbounds, manual_tproxy_rules } from "./feature/manual_tproxy.mjs";
 import { blackhole_outbound, direct_outbound, server_outbound } from "./feature/outbound.mjs";
 import { api_conf, balancer, logging, metrics_conf, policy, system_route_rules } from "./feature/system.mjs";
+import { russian_domains_rule } from "./russian_domains.js";
 
 function inbounds(proxy, config, extra_inbound) {
     const tproxy_sniffing = proxy["tproxy_sniffing"];
@@ -172,6 +173,15 @@ function rules(proxy, bridge, manual_tproxy, extra_inbound, fakedns) {
             balancerTag: "udp_outbound_v4"
         },
     ];
+    // Add Russian domains rule with all inbound tags
+    const russian_rule = russian_domains_rule();
+    russian_rule.inboundTag = [...tproxy_tcp_inbound_v4_tags, ...tproxy_udp_inbound_v4_tags, 
+                              ...tproxy_tcp_inbound_v6_tags, ...tproxy_udp_inbound_v6_tags, 
+                              ...extra_inbound_global_tcp_tags, ...extra_inbound_global_udp_tags,
+                              ...extra_inbound_global_http_tags, ...extra_inbound_global_socks5_tags,
+                              "socks_inbound", "http_inbound"];
+    splice(result, 0, 0, russian_rule);
+    
     if (proxy["tproxy_sniffing"] == "1") {
         if (length(secure_domain_rules(proxy)) > 0) {
             splice(result, 0, 0, {
